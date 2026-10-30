@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invoice Maker</title>
+  <meta name="description" content="Create a clean invoice in the browser, see it update live, print or save as PDF. No account, data stays on your device.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230f766e'/><path d='M20 18h24v28l-4-3-4 3-4-3-4 3-4-3-4 3z' fill='white'/></svg>">
+</head>
+<body>
+  <header class="topbar no-print">
+    <div class="brand">🧾 Invoice Maker</div>
+    <div class="actions">
+      <select id="template" aria-label="Color theme">
+        <option value="teal">Teal</option><option value="navy">Navy</option><option value="plum">Plum</option><option value="mono">Mono</option>
+      </select>
+      <button class="btn btn-ghost" id="load-sample">Load sample</button>
+      <button class="btn btn-ghost" id="reset">New invoice</button>
+      <button class="btn" id="print">Print / Save PDF</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <form class="editor no-print" id="editor" autocomplete="off">
+      <section>
+        <h2>From</h2>
+        <div class="grid-2">
+          <label>Your name / company<input name="from_name" placeholder="Studio Nine"></label>
+          <label>Email<input name="from_email" type="email" placeholder="hello@studio.nine"></label>
+        </div>
+        <label>Address<textarea name="from_address" rows="2" placeholder="12 Market St, Berlin, Germany"></textarea></label>
+        <div class="grid-2">
+          <label>Tax / VAT ID<input name="from_tax" placeholder="DE123456789"></label>
+          <label>Logo text<input name="logo" placeholder="S9" maxlength="3"></label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Bill to</h2>
+        <div class="grid-2">
+          <label>Client<input name="to_name" placeholder="Acme GmbH"></label>
+          <label>Email<input name="to_email" type="email" placeholder="finance@acme.io"></label>
+        </div>
+        <label>Address<textarea name="to_address" rows="2" placeholder="Client address"></textarea></label>
+      </section>
+
+      <section>
+        <h2>Details</h2>
+        <div class="grid-3">
+          <label>Invoice #<input name="number" placeholder="2026-001"></label>
+          <label>Issue date<input name="date" type="date"></label>
+          <label>Due date<input name="due" type="date"></label>
+        </div>
+        <div class="grid-3">
+          <label>Currency<select name="currency"><option>USD</option><option>EUR</option><option>GBP</option><option>AMD</option><option>CHF</option><option>PLN</option></select></label>
+          <label>Tax %<input name="tax" type="number" min="0" max="100" step="0.1" value="0"></label>
+          <label>Discount %<input name="discount" type="number" min="0" max="100" step="0.1" value="0"></label>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head"><h2>Items</h2><button type="button" class="btn btn-small btn-ghost" id="add-item">+ Add item</button></div>
+        <div class="items" id="items"></div>
+      </section>
+
+      <section>
+        <h2>Notes & payment</h2>
+        <label>Notes<textarea name="notes" rows="2" placeholder="Thank you for your business."></textarea></label>
+        <label>Payment details<textarea name="payment" rows="3" placeholder="Bank: ... IBAN: ... BIC: ..."></textarea></label>
+      </section>
+      <p class="hint">Everything is saved in this browser as you type. Nothing is uploaded.</p>
+    </form>
+
+    <main class="preview-wrap">
+      <article class="invoice" id="invoice" data-theme="teal">
+        <header class="inv-head">
+          <div class="inv-brand"><div class="inv-logo" id="p-logo">S9</div><div><div class="inv-from" id="p-from-name">Your company</div><div class="inv-meta" id="p-from-contact"></div></div></div>
+          <div class="inv-title"><h1>Invoice</h1><div class="inv-number" id="p-number">#</div></div>
+        </header>
+        <section class="inv-parties">
+          <div><h3>Bill to</h3><div class="strong" id="p-to-name">Client</div><div class="inv-meta" id="p-to-contact"></div></div>
+          <div class="inv-dates">
+            <div><h3>Issue date</h3><div id="p-date">—</div></div>
+            <div><h3>Due date</h3><div id="p-due">—</div></div>
+            <div><h3>Amount due</h3><div class="strong big" id="p-due-amount">0.00</div></div>
+          </div>
+        </section>
+        <table class="inv-table">
+          <thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead>
+          <tbody id="p-items"></tbody>
+        </table>
+        <section class="inv-totals">
+          <div class="inv-notes"><h3 id="p-notes-title" hidden>Notes</h3><p id="p-notes"></p><h3 id="p-payment-title" hidden>Payment details</h3><p id="p-payment"></p></div>
+          <dl>
+            <div><dt>Subtotal</dt><dd id="p-subtotal">0.00</dd></div>
+            <div id="p-discount-row" hidden><dt>Discount <span id="p-discount-pct"></span></dt><dd id="p-discount">0.00</dd></div>
+            <div id="p-tax-row" hidden><dt>Tax <span id="p-tax-pct"></span></dt><dd id="p-tax">0.00</dd></div>
+            <div class="total"><dt>Total</dt><dd id="p-total">0.00</dd></div>
+          </dl>
+        </section>
+        <footer class="inv-foot" id="p-foot"></footer>
+      </article>
+    </main>
+  </div>
+
+  <template id="item-row">
+    <div class="item">
+      <input name="desc" placeholder="Description" class="desc">
+      <input name="qty" type="number" min="0" step="0.5" value="1" class="qty" aria-label="Quantity">
+      <input name="rate" type="number" min="0" step="0.01" placeholder="0.00" class="rate" aria-label="Rate">
+      <button type="button" class="remove" aria-label="Remove item">✕</button>
+    </div>
+  </template>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
