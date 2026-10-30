@@ -3,6 +3,8 @@
 Create a clean invoice in the browser, watch it update as you type, then print it or save as PDF.
 Plain HTML, CSS and JavaScript. No account, no server: the draft lives in `localStorage` on your device.
 
+![Screenshot](docs/screenshot.jpg)
+
 **Live:** https://tigran-ohanyan.github.io/invoice-maker/
 
 ## Features
